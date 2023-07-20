@@ -1,0 +1,64 @@
+.testi {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.testi h1 {
+  margin: 20px;
+}
+
+.button {
+  margin-bottom: 20px;
+}
+
+.btn {
+  background-color: black;
+  color: white;
+  padding: 3px 15px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.testi .under {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 30px;
+}
+
+.card {
+  width: 18rem;
+  box-shadow: 0 0 10px black;
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+}
+
+.card img {
+  width: 100%;
+  object-fit: cover;
+  height: 180px;
+}
+
+.card .quote {
+  color: rgb(79, 79, 79);
+  font-style: italic;
+}
+
+.card .author {
+  text-align: end;
+}
+
+@media only screen and (max-width: 340px) {
+  .card {
+    width: 80%;
+  }
+
+  .testi h1 {
+    font-size: large;
+  }
+}
