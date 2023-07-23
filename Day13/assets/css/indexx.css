@@ -1,0 +1,13 @@
+.contain {
+  display: flex;
+  gap: 20px;
+}
+
+@media only screen and (max-width: 576px) {
+  .contain {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
+}
