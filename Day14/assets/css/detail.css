@@ -1,0 +1,77 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 20px 50px 50px;
+}
+
+.cardd {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.cardd img {
+  width: 500px;
+  object-fit: cover;
+  height: 300px;
+  margin: 15px;
+}
+
+.cardd .text {
+  margin: 15px;
+  width: 260px;
+}
+
+.cardd .text .durasi {
+  display: flex;
+  flex-direction: column;
+  margin: 10px 0;
+  gap: 10px;
+}
+
+.cardd .text .icon {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 10px 0;
+}
+
+.cardd .text .icon p {
+  width: 120px;
+}
+
+@media only screen and (max-width: 950px) {
+  .cardd .text {
+    width: 500px;
+  }
+
+  .cardd .text .icon p {
+    width: 180px;
+  }
+}
+
+@media only screen and (max-width: 620px) {
+  .container {
+    margin-left: 5%;
+    margin-right: 5%;
+  }
+
+  .cardd {
+    width: 100%;
+  }
+
+  .cardd img {
+    width: 100%;
+    height: fit-content;
+  }
+
+  .cardd div {
+    width: 100%;
+  }
+
+  .cardd div .text {
+    width: 100%;
+  }
+}
