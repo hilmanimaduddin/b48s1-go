@@ -1,0 +1,9 @@
+func login(c echo.Context) error { tmpl, err :=
+template.ParseFiles("views/form-loginn.html") if err != nil { return
+c.JSON(http.StatusInternalServerError, err.Error()) } sess, errSess :=
+session.Get("session", c) if errSess != nil { return
+c.JSON(http.StatusInternalServerError, errSess.Error()) } flash :=
+map[string]interface{}{ "FlashMessage": sess.Values["message"], "FlashStatus":
+sess.Values["status"], } delete(sess.Values, "message") delete(sess.Values,
+"status") sess.Save(c.Request(), c.Response()) return tmpl.Execute(c.Response(),
+flash) }
