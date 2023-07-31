@@ -103,6 +103,7 @@ func main() {
 	e.GET("/project", project)
 	e.GET("/testimonial", testimonial)
 	e.GET("/blog", blog)
+	e.GET("/my-blog", myBlog)
 	e.GET("/detail/:id", detail)
 	e.GET("/update/:id", update)
 
@@ -115,7 +116,7 @@ func main() {
 
 	e.POST("/add-blog", middleware.UploadFile(addBlog))
 	e.POST("/blog-delete/:id", deleteBlog)
-	e.POST("/update-blog", editBlog)
+	e.POST("/update-blog", middleware.UploadFile(editBlog))
 
 	e.GET("/coba", func(c echo.Context) error {
 		return c.JSON(http.StatusOK, "Hello World")
@@ -163,7 +164,23 @@ func contact(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
 
-	return tmpl.Execute(c.Response(), nil)
+	sess, errSess := session.Get("session", c)
+	if errSess != nil {
+		return c.JSON(http.StatusInternalServerError, errSess.Error())
+	}
+
+	if sess.Values["isLogin"] != true {
+		userData.IsLogin = false
+	} else {
+		userData.IsLogin = true
+		userData.Name = sess.Values["name"].(string)
+	}
+
+	data := map[string]interface{}{
+		"UserLogin":	userData,
+	}
+
+	return tmpl.Execute(c.Response(), data)
 }
 
 func project(c echo.Context) error {
@@ -183,10 +200,28 @@ func testimonial(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, err.Error())
 	}
 	
-	return tmpl.Execute(c.Response(), nil)
+	sess, errSess := session.Get("session", c)
+	if errSess != nil {
+		return c.JSON(http.StatusInternalServerError, errSess.Error())
+	}
+
+	if sess.Values["isLogin"] != true {
+		userData.IsLogin = false
+	} else {
+		userData.IsLogin = true
+		userData.Name = sess.Values["name"].(string)
+	}
+
+	data := map[string]interface{}{
+		"UserLogin":	userData,
+	}
+
+	return tmpl.Execute(c.Response(), data)
 }
 
 func blog(c echo.Context) error {
+	sess, _ := session.Get("session", c)
+
 	data, _ := connection.Conn.Query(context.Background(), "SELECT tb_projects.id, tb_users.name, tb_projects.name, tb_projects.description, tb_projects.checkbox1, tb_projects.checkbox2, tb_projects.checkbox3, tb_projects.checkbox4, tb_projects.image, tb_projects.startdate, tb_projects.enddate, tb_projects.duration FROM tb_projects LEFT JOIN tb_users ON tb_users.id = tb_projects.author_id")
 
 	var result []Blog
@@ -241,7 +276,62 @@ func blog(c echo.Context) error {
 	return tmpl.Execute(c.Response(), blogs)
 }
 
+func myBlog(c echo.Context) error {
+	sess, _ := session.Get("session", c)
 
+	data, _ := connection.Conn.Query(context.Background(), "SELECT tb_projects.id, tb_users.name, tb_projects.name, tb_projects.description, tb_projects.checkbox1, tb_projects.checkbox2, tb_projects.checkbox3, tb_projects.checkbox4, tb_projects.image, tb_projects.startdate, tb_projects.enddate, tb_projects.duration FROM tb_projects LEFT JOIN tb_users ON tb_users.id = tb_projects.author_id WHERE tb_users.id=$1", sess.Values["id"].(int))
+
+	var result []Blog
+	for data.Next() {
+		var each = Blog{}
+
+		var tempAuthor sql.NullString
+
+		err := data.Scan(&each.ID, &tempAuthor, &each.Subject, &each.Description, &each.Checkbox1, &each.Checkbox2, &each.Checkbox3, &each.Checkbox4, &each.Image, &each.StartDate, &each.EndDate, &each.Duration)
+		
+		if err != nil {
+			fmt.Println(err.Error())
+			return c.JSON(http.StatusInternalServerError, map[string]string{"Message": err.Error()})
+		}
+
+		each.Author = tempAuthor.String
+		each.Icon1 = MyIcon(each.Checkbox1)
+		each.Icon2 = MyIcon(each.Checkbox2)
+		each.Icon3 = MyIcon(each.Checkbox3)
+		each.Icon4 = MyIcon(each.Checkbox4)
+		each.Myicon1 = MyLabel(each.Checkbox1)
+		each.Myicon2 = MyLabel(each.Checkbox2)
+		each.Myicon3 = MyLabel(each.Checkbox3)
+		each.Myicon4 = MyLabel(each.Checkbox4)
+
+		result = append(result, each)
+	}
+	
+	tmpl, err := template.ParseFiles("views/blog.html")
+	
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err.Error())
+	}
+
+	sess, errSess := session.Get("session", c)
+	if errSess != nil {
+		return c.JSON(http.StatusInternalServerError, errSess.Error())
+	}
+
+	if sess.Values["isLogin"] != true {
+		userData.IsLogin = false
+	} else {
+		userData.IsLogin = true
+		userData.Name = sess.Values["name"].(string)
+	}
+
+	blogs := map[string]interface{}{
+		"Blogs": 		result,
+		"UserLogin":	userData,
+	}
+
+	return tmpl.Execute(c.Response(), blogs)
+}
 
 func detail(c echo.Context) error {
 	id := c.Param("id")
@@ -350,7 +440,7 @@ func addBlog(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"message": err.Error()})
 	}
 
-	return c.Redirect(http.StatusMovedPermanently, "/blog")
+	return c.Redirect(http.StatusMovedPermanently, "/my-blog")
 }
 
 func getDuration(endDate, startDate string) string {
@@ -401,7 +491,7 @@ func deleteBlog(c echo.Context) error {
 
 	connection.Conn.Exec(context.Background(), "DELETE from tb_projects WHERE id=$1", id)
 
-	return c.Redirect(http.StatusMovedPermanently, "/blog")
+	return c.Redirect(http.StatusMovedPermanently, "/my-blog")
 }
 
 func update(c echo.Context) error {
@@ -443,14 +533,16 @@ func editBlog(c echo.Context) error {
 	description := c.FormValue("input-description")
 	duration := getDuration(endDate, startDate)
 
-	_, err := connection.Conn.Exec(context.Background(), "UPDATE tb_projects SET name=$1, description=$2, checkbox1=$3, checkbox2=$4, checkbox3=$5, checkbox4=$6, startdate=$7, enddate=$8, duration=$9 WHERE id=$10", project, description, iconA, iconB, iconC, iconD, startDate, endDate, duration, id)
+	image := c.Get("dataFile").(string)
+
+	_, err := connection.Conn.Exec(context.Background(), "UPDATE tb_projects SET name=$1, description=$2, checkbox1=$3, checkbox2=$4, checkbox3=$5, checkbox4=$6, image=$7, startdate=$8, enddate=$9, duration=$10 WHERE id=$11", project, description, iconA, iconB, iconC, iconD, image, startDate, endDate, duration, id)
 
 
 	if err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"message": err.Error()})
 	}
 
-	return c.Redirect(http.StatusMovedPermanently, "/blog")
+	return c.Redirect(http.StatusMovedPermanently, "/my-blog")
 }
 
 

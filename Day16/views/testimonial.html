@@ -37,9 +37,15 @@
             <li class="nav-item">
               <a class="nav-link fw-bold" aria-current="page" href="/">Home</a>
             </li>
+            {{if .UserLogin.IsLogin }}
+            <li class="nav-item">
+              <a class="nav-link fw-bold" href="/my-blog">My Project</a>
+            </li>
+            {{else}}
             <li class="nav-item">
               <a class="nav-link fw-bold" href="/blog">My Project</a>
             </li>
+            {{end}}
             <li class="nav-item">
               <a class="nav-link fw-bold active" href="#">My Testimonials</a>
             </li>
